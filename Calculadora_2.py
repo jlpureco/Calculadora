@@ -35,7 +35,6 @@ def generate_payment_schedule(principal, monthly_rate, months):
     monthly_interest = principal * monthly_rate / 100
     monthly_iva = monthly_interest * 0.16
     monthly_principal = principal / months
-    
     schedule = []
     remaining_balance = principal
     

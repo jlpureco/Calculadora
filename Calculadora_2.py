@@ -14,8 +14,6 @@ if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
 def check_password(username, password):
-    # This is a simple example. In a real application, you'd check against a database
-    # and use proper password hashing.
     correct_username = "admin"
     correct_password = "password123"
     return username == correct_username and password == correct_password
@@ -28,6 +26,7 @@ def login():
         if check_password(username, password):
             st.session_state['logged_in'] = True
             st.success("Logged in successfully!")
+            st.experimental_rerun()
         else:
             st.error("Incorrect username or password")
 
@@ -35,6 +34,7 @@ def generate_payment_schedule(principal, monthly_rate, months):
     monthly_interest = principal * monthly_rate / 100
     monthly_iva = monthly_interest * 0.16
     monthly_principal = principal / months
+    
     schedule = []
     remaining_balance = principal
     

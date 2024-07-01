@@ -4,19 +4,27 @@ Created on Sun Jun 30 16:49:51 2024
 
 @author: jlpur
 """
+
 import streamlit as st
 import pandas as pd
 import numpy as np
 import base64
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.lib.units import inch
+from io import BytesIO
 
 # Initialize session state
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
 def check_password(username, password):
-    correct_username = "admin"
-    correct_password = "password123"
-    return username == correct_username and password == correct_password
+    users = {
+        "Andres.Lira": "admin01",
+        "Nadia.Lira": "admin01"
+    }
+    return username in users and users[username] == password
 
 def login():
     st.title("Iniciar Sesión")
@@ -59,11 +67,45 @@ def generate_payment_schedule(principal, monthly_rate, months):
     
     return pd.DataFrame(schedule)
 
-def get_table_download_link(df, filename):
-    csv = df.to_csv(index=False, float_format='%.2f')
-    b64 = base64.b64encode(csv.encode()).decode()
-    href = f'<a href="data:file/csv;base64,{b64}" download="{filename}">Descargar archivo CSV</a>'
+def get_table_download_link(df, filename, file_label):
+    if file_label == 'CSV':
+        csv = df.to_csv(index=False, float_format='%.2f')
+        b64 = base64.b64encode(csv.encode()).decode()
+        href = f'<a href="data:file/csv;base64,{b64}" download="{filename}.csv">Descargar archivo CSV</a>'
+    elif file_label == 'PDF':
+        pdf = generate_pdf(df)
+        b64 = base64.b64encode(pdf).decode()
+        href = f'<a href="data:application/pdf;base64,{b64}" download="{filename}.pdf">Descargar archivo PDF</a>'
     return href
+
+def generate_pdf(df):
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+
+    data = [df.columns.tolist()] + df.values.tolist()
+    t = Table(data)
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 12),
+        ('TOPPADDING', (0, 1), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    elements.append(t)
+    doc.build(elements)
+    pdf = buffer.getvalue()
+    buffer.close()
+    return pdf
 
 def main_app():
     st.title('Calculadora de Préstamos')
@@ -102,7 +144,8 @@ def main_app():
             st.write(f'Total de IVA Pagado: ${total_iva:.2f}')
             st.write(f'Monto Total Pagado: ${total_payments:.2f}')
             
-            st.markdown(get_table_download_link(schedule, f'calendario_pagos_{months}meses.csv'), unsafe_allow_html=True)
+            st.markdown(get_table_download_link(schedule, f'calendario_pagos_{months}meses', 'CSV'), unsafe_allow_html=True)
+            st.markdown(get_table_download_link(schedule, f'calendario_pagos_{months}meses', 'PDF'), unsafe_allow_html=True)
             
             st.divider()  # Add a divider between scenarios
 

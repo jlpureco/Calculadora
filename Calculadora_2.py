@@ -19,16 +19,16 @@ def check_password(username, password):
     return username == correct_username and password == correct_password
 
 def login():
-    st.title("Login")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-    if st.button("Login"):
+    st.title("Iniciar Sesión")
+    username = st.text_input("Usuario")
+    password = st.text_input("Contraseña", type="password")
+    if st.button("Ingresar"):
         if check_password(username, password):
             st.session_state['logged_in'] = True
-            st.success("Logged in successfully!")
+            st.success("¡Sesión iniciada exitosamente!")
             st.experimental_rerun()
         else:
-            st.error("Incorrect username or password")
+            st.error("Usuario o contraseña incorrectos")
 
 def generate_payment_schedule(principal, monthly_rate, months):
     monthly_interest = principal * monthly_rate / 100
@@ -49,12 +49,12 @@ def generate_payment_schedule(principal, monthly_rate, months):
             remaining_balance = 0
         
         schedule.append({
-            'Month': month,
-            'Principal': monthly_principal,
-            'Interest': monthly_interest,
+            'Mes': month,
+            'Capital': monthly_principal,
+            'Interés': monthly_interest,
             'IVA': monthly_iva,
-            'Total Payment': total_payment,
-            'Remaining Balance': remaining_balance
+            'Pago Total': total_payment,
+            'Saldo Restante': remaining_balance
         })
     
     return pd.DataFrame(schedule)
@@ -62,47 +62,47 @@ def generate_payment_schedule(principal, monthly_rate, months):
 def get_table_download_link(df, filename):
     csv = df.to_csv(index=False, float_format='%.2f')
     b64 = base64.b64encode(csv.encode()).decode()
-    href = f'<a href="data:file/csv;base64,{b64}" download="{filename}">Download CSV file</a>'
+    href = f'<a href="data:file/csv;base64,{b64}" download="{filename}">Descargar archivo CSV</a>'
     return href
 
 def main_app():
-    st.title('Loan Payment Calculator')
+    st.title('Calculadora de Préstamos')
 
-    principal = st.number_input('Loan Amount', min_value=1000, value=100000)
-    monthly_rate = st.number_input('Monthly Interest Rate (%)', min_value=0.01, max_value=10.0, value=0.5, step=0.01)
+    principal = st.number_input('Monto del Préstamo', min_value=1000, value=100000)
+    monthly_rate = st.number_input('Tasa de Interés Mensual (%)', min_value=0.01, max_value=10.0, value=0.5, step=0.01)
 
     scenarios = [3, 6, 12, 18, 24, 30, 36]
 
-    if st.button('Calculate All Scenarios'):
+    if st.button('Calcular Todos los Escenarios'):
         for months in scenarios:
-            st.header(f'{months} Month Scenario')
+            st.header(f'Escenario a {months} Meses')
             
             schedule = generate_payment_schedule(principal, monthly_rate, months)
             
-            st.write(f'Monthly Principal Payment: ${schedule["Principal"].iloc[0]:.2f}')
-            st.write(f'Monthly Interest Payment: ${schedule["Interest"].iloc[0]:.2f}')
-            st.write(f'Monthly IVA: ${schedule["IVA"].iloc[0]:.2f}')
-            st.write(f'Monthly Total Payment: ${schedule["Total Payment"].iloc[0]:.2f}')
+            st.write(f'Pago Mensual de Capital: ${schedule["Capital"].iloc[0]:.2f}')
+            st.write(f'Pago Mensual de Interés: ${schedule["Interés"].iloc[0]:.2f}')
+            st.write(f'IVA Mensual: ${schedule["IVA"].iloc[0]:.2f}')
+            st.write(f'Pago Mensual Total: ${schedule["Pago Total"].iloc[0]:.2f}')
             
             st.dataframe(schedule.style.format({
-                'Principal': '${:.2f}',
-                'Interest': '${:.2f}',
+                'Capital': '${:.2f}',
+                'Interés': '${:.2f}',
                 'IVA': '${:.2f}',
-                'Total Payment': '${:.2f}',
-                'Remaining Balance': '${:.2f}'
+                'Pago Total': '${:.2f}',
+                'Saldo Restante': '${:.2f}'
             }))
             
-            total_principal = schedule['Principal'].sum()
-            total_interest = schedule['Interest'].sum()
+            total_principal = schedule['Capital'].sum()
+            total_interest = schedule['Interés'].sum()
             total_iva = schedule['IVA'].sum()
-            total_payments = schedule['Total Payment'].sum()
+            total_payments = schedule['Pago Total'].sum()
             
-            st.write(f'Total Principal Paid: ${total_principal:.2f}')
-            st.write(f'Total Interest Paid: ${total_interest:.2f}')
-            st.write(f'Total IVA Paid: ${total_iva:.2f}')
-            st.write(f'Total Amount Paid: ${total_payments:.2f}')
+            st.write(f'Total de Capital Pagado: ${total_principal:.2f}')
+            st.write(f'Total de Interés Pagado: ${total_interest:.2f}')
+            st.write(f'Total de IVA Pagado: ${total_iva:.2f}')
+            st.write(f'Monto Total Pagado: ${total_payments:.2f}')
             
-            st.markdown(get_table_download_link(schedule, f'loan_schedule_{months}months.csv'), unsafe_allow_html=True)
+            st.markdown(get_table_download_link(schedule, f'calendario_pagos_{months}meses.csv'), unsafe_allow_html=True)
             
             st.divider()  # Add a divider between scenarios
 
@@ -111,6 +111,6 @@ if not st.session_state['logged_in']:
     login()
 else:
     main_app()
-    if st.button("Logout"):
+    if st.button("Cerrar Sesión"):
         st.session_state['logged_in'] = False
         st.experimental_rerun()

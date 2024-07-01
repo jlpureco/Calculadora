@@ -8,7 +8,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import base64
-import hashlib
 
 # Initialize session state
 if 'logged_in' not in st.session_state:
@@ -33,10 +32,39 @@ def login():
             st.error("Incorrect username or password")
 
 def generate_payment_schedule(principal, monthly_rate, months):
-    # ... (rest of the function remains the same)
+    monthly_interest = principal * monthly_rate / 100
+    monthly_iva = monthly_interest * 0.16
+    monthly_principal = principal / months
+    
+    schedule = []
+    remaining_balance = principal
+    
+    for month in range(1, months + 1):
+        if month == months:  # Last payment
+            monthly_principal = remaining_balance
+        
+        total_payment = monthly_principal + monthly_interest + monthly_iva
+        remaining_balance -= monthly_principal
+        
+        if remaining_balance < 0:
+            remaining_balance = 0
+        
+        schedule.append({
+            'Month': month,
+            'Principal': monthly_principal,
+            'Interest': monthly_interest,
+            'IVA': monthly_iva,
+            'Total Payment': total_payment,
+            'Remaining Balance': remaining_balance
+        })
+    
+    return pd.DataFrame(schedule)
 
 def get_table_download_link(df, filename):
-    # ... (rest of the function remains the same)
+    csv = df.to_csv(index=False, float_format='%.2f')
+    b64 = base64.b64encode(csv.encode()).decode()
+    href = f'<a href="data:file/csv;base64,{b64}" download="{filename}">Download CSV file</a>'
+    return href
 
 def main_app():
     st.title('Loan Payment Calculator')

@@ -11,9 +11,11 @@ import numpy as np
 import base64
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 from io import BytesIO
+from datetime import datetime
 
 # Initialize session state
 if 'logged_in' not in st.session_state:
@@ -67,22 +69,35 @@ def generate_payment_schedule(principal, monthly_rate, months):
     
     return pd.DataFrame(schedule)
 
-def get_table_download_link(df, filename, file_label):
+def get_table_download_link(df, filename, file_label, principal, monthly_rate, months):
+    fecha_cotizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    header_info = f"Monto del Préstamo: ${principal:.2f}\n" \
+                  f"Tasa de Interés Mensual: {monthly_rate:.2f}%\n" \
+                  f"Plazo: {months} meses\n" \
+                  f"Fecha de Cotización: {fecha_cotizacion}\n\n"
+
     if file_label == 'CSV':
-        csv = df.to_csv(index=False, float_format='%.2f')
+        csv = header_info + df.to_csv(index=False, float_format='%.2f')
         b64 = base64.b64encode(csv.encode()).decode()
         href = f'<a href="data:file/csv;base64,{b64}" download="{filename}.csv">Descargar archivo CSV</a>'
     elif file_label == 'PDF':
-        pdf = generate_pdf(df)
+        pdf = generate_pdf(df, header_info)
         b64 = base64.b64encode(pdf).decode()
         href = f'<a href="data:application/pdf;base64,{b64}" download="{filename}.pdf">Descargar archivo PDF</a>'
     return href
 
-def generate_pdf(df):
+
+def generate_pdf(df, header_info):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
     elements = []
 
+    # Add header
+    styles = getSampleStyleSheet()
+    header_para = Paragraph(header_info.replace('\n', '<br/>'), styles['Normal'])
+    elements.append(header_para)
+
+    # Add table
     data = [df.columns.tolist()] + df.values.tolist()
     t = Table(data)
     t.setStyle(TableStyle([
@@ -90,13 +105,13 @@ def generate_pdf(df):
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
         ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -1), 12),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
         ('TOPPADDING', (0, 1), (-1, -1), 6),
         ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
         ('GRID', (0, 0), (-1, -1), 1, colors.black)
@@ -144,8 +159,8 @@ def main_app():
             st.write(f'Total de IVA Pagado: ${total_iva:.2f}')
             st.write(f'Monto Total Pagado: ${total_payments:.2f}')
             
-            st.markdown(get_table_download_link(schedule, f'calendario_pagos_{months}meses', 'CSV'), unsafe_allow_html=True)
-            st.markdown(get_table_download_link(schedule, f'calendario_pagos_{months}meses', 'PDF'), unsafe_allow_html=True)
+            st.markdown(get_table_download_link(schedule, f'calendario_pagos_{months}meses', 'CSV', principal, monthly_rate, months), unsafe_allow_html=True)
+            st.markdown(get_table_download_link(schedule, f'calendario_pagos_{months}meses', 'PDF', principal, monthly_rate, months), unsafe_allow_html=True)
             
             st.divider()  # Add a divider between scenarios
 

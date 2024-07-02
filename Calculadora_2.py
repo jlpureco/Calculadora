@@ -113,7 +113,7 @@ def main_app():
     principal = st.number_input('Monto del Préstamo', min_value=1000, value=100000)
     monthly_rate = st.number_input('Tasa de Interés Mensual (%)', min_value=0.01, max_value=10.0, value=0.5, step=0.01)
 
-    scenarios = [3, 6, 12, 18, 24, 30, 36]
+    scenarios = [3, 6, 12, 18, 24, 30, 36, 48, 60]
 
     if st.button('Calcular Todos los Escenarios'):
         for months in scenarios:

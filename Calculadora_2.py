@@ -31,19 +31,53 @@ if 'logged_in' not in st.session_state:
 
 def load_users():
     if os.path.exists(USUARIOS_FILE):
-        with open(USUARIOS_FILE, 'r') as f:
-            return json.load(f)
-    return {}
+        try:
+            with open(USUARIOS_FILE, 'r') as f:
+                content = f.read()
+                if content.strip():  # Verifica si el archivo no está vacío
+                    return json.loads(content)
+                else:
+                    return {}  # Retorna un diccionario vacío si el archivo está vacío
+        except json.JSONDecodeError:
+            st.error("Error al leer el archivo de usuarios. Inicializando con usuarios predeterminados.")
+            return initialize_default_users()
+    else:
+        return initialize_default_users()
 
 def save_users(users):
     with open(USUARIOS_FILE, 'w') as f:
         json.dump(users, f, indent=4)
+
+def initialize_default_users():
+    default_users = {
+        "Andres.Lira": {
+            "password": "admin01",
+            "type": "administrador",
+            "nombre": "Andrés Lira",
+            "telefono": "1234567890"
+        },
+        "Nadia.Lira": {
+            "password": "admin01",
+            "type": "administrador",
+            "nombre": "Nadia Lira",
+            "telefono": "0987654321"
+        }
+    }
+    save_users(default_users)
+    return default_users
 
 def check_password(username, password):
     users = load_users()
     if username in users and users[username]['password'] == password:
         return users[username]
     return None
+
+if not os.path.exists("Datos"):
+    os.makedirs("Datos")
+
+# Inicializa los usuarios si el archivo no existe o está vacío
+if not os.path.exists(USUARIOS_FILE) or os.path.getsize(USUARIOS_FILE) == 0:
+    initialize_default_users()
 
 def add_user(username, password, user_type, nombre, telefono):
     users = load_users()

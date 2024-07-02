@@ -16,6 +16,9 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 from io import BytesIO
 from datetime import datetime
+import locale
+
+locale.setlocale(locale.LC_ALL, '')
 
 # Initialize session state
 if 'logged_in' not in st.session_state:
@@ -57,27 +60,27 @@ def generate_payment_schedule(principal, monthly_rate, months):
         
         if remaining_balance < 0:
             remaining_balance = 0
-        
+
         schedule.append({
-            'Mes': month,
-            'Capital': monthly_principal,
-            'Interés': monthly_interest,
-            'IVA': monthly_iva,
-            'Pago Total': total_payment,
-            'Saldo Restante': remaining_balance
+            'Mes': int(month),  # Asegurarse de que el mes sea un entero
+            'Capital': f"{monthly_principal:,.2f}",
+            'Interés': f"{monthly_interest:,.2f}",
+            'IVA': f"{monthly_iva:,.2f}",
+            'Pago Total': f"{total_payment:,.2f}",
+            'Saldo Restante': f"{remaining_balance:,.2f}"
         })
-    
+
     return pd.DataFrame(schedule)
 
 def get_table_download_link(df, filename, file_label, principal, monthly_rate, months):
     fecha_cotizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    header_info = f"Monto del Préstamo: ${principal:.2f}\n" \
+    header_info = f"Monto del Préstamo: ${principal:,.2f}\n" \
                   f"Tasa de Interés Mensual: {monthly_rate:.2f}%\n" \
                   f"Plazo: {months} meses\n" \
                   f"Fecha de Cotización: {fecha_cotizacion}\n\n"
 
     if file_label == 'CSV':
-        csv = header_info + df.to_csv(index=False, float_format='%.2f')
+        csv = header_info + df.to_csv(index=False)
         b64 = base64.b64encode(csv.encode()).decode()
         href = f'<a href="data:file/csv;base64,{b64}" download="{filename}.csv">Descargar archivo CSV</a>'
     elif file_label == 'PDF':
@@ -136,28 +139,22 @@ def main_app():
             
             schedule = generate_payment_schedule(principal, monthly_rate, months)
             
-            st.write(f'Pago Mensual de Capital: ${schedule["Capital"].iloc[0]:.2f}')
-            st.write(f'Pago Mensual de Interés: ${schedule["Interés"].iloc[0]:.2f}')
-            st.write(f'IVA Mensual: ${schedule["IVA"].iloc[0]:.2f}')
-            st.write(f'Pago Mensual Total: ${schedule["Pago Total"].iloc[0]:.2f}')
+            st.write(f'Pago Mensual de Capital: ${schedule["Capital"].iloc[0]}')
+            st.write(f'Pago Mensual de Interés: ${schedule["Interés"].iloc[0]}')
+            st.write(f'IVA Mensual: ${schedule["IVA"].iloc[0]}')
+            st.write(f'Pago Mensual Total: ${schedule["Pago Total"].iloc[0]}')
             
-            st.dataframe(schedule.style.format({
-                'Capital': '${:.2f}',
-                'Interés': '${:.2f}',
-                'IVA': '${:.2f}',
-                'Pago Total': '${:.2f}',
-                'Saldo Restante': '${:.2f}'
-            }))
+            st.dataframe(schedule)
             
-            total_principal = schedule['Capital'].sum()
-            total_interest = schedule['Interés'].sum()
-            total_iva = schedule['IVA'].sum()
-            total_payments = schedule['Pago Total'].sum()
+            total_principal = sum(float(x.replace(',', '')) for x in schedule['Capital'])
+            total_interest = sum(float(x.replace(',', '')) for x in schedule['Interés'])
+            total_iva = sum(float(x.replace(',', '')) for x in schedule['IVA'])
+            total_payments = sum(float(x.replace(',', '')) for x in schedule['Pago Total'])
             
-            st.write(f'Total de Capital Pagado: ${total_principal:.2f}')
-            st.write(f'Total de Interés Pagado: ${total_interest:.2f}')
-            st.write(f'Total de IVA Pagado: ${total_iva:.2f}')
-            st.write(f'Monto Total Pagado: ${total_payments:.2f}')
+            st.write(f'Total de Capital Pagado: ${total_principal:,.2f}')
+            st.write(f'Total de Interés Pagado: ${total_interest:,.2f}')
+            st.write(f'Total de IVA Pagado: ${total_iva:,.2f}')
+            st.write(f'Monto Total Pagado: ${total_payments:,.2f}')
             
             st.markdown(get_table_download_link(schedule, f'calendario_pagos_{months}meses', 'CSV', principal, monthly_rate, months), unsafe_allow_html=True)
             st.markdown(get_table_download_link(schedule, f'calendario_pagos_{months}meses', 'PDF', principal, monthly_rate, months), unsafe_allow_html=True)

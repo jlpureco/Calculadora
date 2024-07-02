@@ -237,15 +237,35 @@ def main_app():
 
 def add_new_user():
     st.subheader("Agregar nuevo usuario")
-    new_username = st.text_input("Nuevo usuario")
-    new_password = st.text_input("Nueva contraseña", type="password")
-    user_type = st.selectbox("Tipo de usuario", ["vendedor", "administrador"])
-    nombre = st.text_input("Nombre completo")
-    telefono = st.text_input("Teléfono de contacto")
+
+    # Inicializar las variables de estado si no existen
+    if 'new_username' not in st.session_state:
+        st.session_state.new_username = ""
+    if 'new_password' not in st.session_state:
+        st.session_state.new_password = ""
+    if 'user_type' not in st.session_state:
+        st.session_state.user_type = "vendedor"
+    if 'nombre' not in st.session_state:
+        st.session_state.nombre = ""
+    if 'telefono' not in st.session_state:
+        st.session_state.telefono = ""
+
+    # Usar las variables de estado en los widgets
+    new_username = st.text_input("Nuevo usuario", value=st.session_state.new_username, key="new_username")
+    new_password = st.text_input("Nueva contraseña", value=st.session_state.new_password, type="password", key="new_password")
+    user_type = st.selectbox("Tipo de usuario", ["vendedor", "administrador"], index=0 if st.session_state.user_type == "vendedor" else 1, key="user_type")
+    nombre = st.text_input("Nombre completo", value=st.session_state.nombre, key="nombre")
+    telefono = st.text_input("Teléfono de contacto", value=st.session_state.telefono, key="telefono")
     
     if st.button("Guardar nuevo usuario"):
         if add_user(new_username, new_password, user_type, nombre, telefono):
             st.success("Usuario agregado exitosamente")
+            # Limpiar los campos después de agregar exitosamente
+            st.session_state.new_username = ""
+            st.session_state.new_password = ""
+            st.session_state.user_type = "vendedor"
+            st.session_state.nombre = ""
+            st.session_state.telefono = ""
         else:
             st.error("El nombre de usuario ya existe")
 

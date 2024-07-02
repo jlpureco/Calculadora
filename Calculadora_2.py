@@ -23,24 +23,50 @@ from pathlib import Path
 
 locale.setlocale(locale.LC_ALL, '')
 
+USUARIOS_FILE = "Datos/usuarios.json"
+
 # Initialize session state
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
+def load_users():
+    if os.path.exists(USUARIOS_FILE):
+        with open(USUARIOS_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_users(users):
+    with open(USUARIOS_FILE, 'w') as f:
+        json.dump(users, f, indent=4)
+
 def check_password(username, password):
-    users = {
-        "Andres.Lira": "admin01",
-        "Nadia.Lira": "admin01"
-    }
-    return username in users and users[username] == password
+    users = load_users()
+    if username in users and users[username]['password'] == password:
+        return users[username]
+    return None
+
+def add_user(username, password, user_type, nombre, telefono):
+    users = load_users()
+    if username not in users:
+        users[username] = {
+            "password": password,
+            "type": user_type,
+            "nombre": nombre,
+            "telefono": telefono
+        }
+        save_users(users)
+        return True
+    return False
 
 def login():
     st.title("Iniciar Sesión")
     username = st.text_input("Usuario")
     password = st.text_input("Contraseña", type="password")
     if st.button("Ingresar"):
-        if check_password(username, password):
+        user = check_password(username, password)
+        if user:
             st.session_state['logged_in'] = True
+            st.session_state['user'] = user
             st.success("¡Sesión iniciada exitosamente!")
             st.experimental_rerun()
         else:
@@ -131,6 +157,10 @@ def generate_pdf(df, header_info):
 def main_app():
     st.title('Calculadora de Préstamos')
 
+    user = st.session_state['user']
+    st.write(f"Bienvenido, {user['nombre']} ({user['type']})")
+    st.write(f"Teléfono de contacto: {user['telefono']}")
+    
     principal = st.number_input('Monto del Préstamo', min_value=1000, value=100000)
     monthly_rate = st.number_input('Tasa de Interés Mensual (%)', min_value=0.01, max_value=10.0, value=0.5, step=0.01)
 
@@ -164,11 +194,54 @@ def main_app():
             
             st.divider()  # Add a divider between scenarios
 
+
+
+    if user['type'] == 'administrador':
+        if st.button("Agregar nuevo usuario"):
+            add_new_user()
+
+
+def add_new_user():
+    st.subheader("Agregar nuevo usuario")
+    new_username = st.text_input("Nuevo usuario")
+    new_password = st.text_input("Nueva contraseña", type="password")
+    user_type = st.selectbox("Tipo de usuario", ["vendedor", "administrador"])
+    nombre = st.text_input("Nombre completo")
+    telefono = st.text_input("Teléfono de contacto")
+    
+    if st.button("Guardar nuevo usuario"):
+        if add_user(new_username, new_password, user_type, nombre, telefono):
+            st.success("Usuario agregado exitosamente")
+        else:
+            st.error("El nombre de usuario ya existe")
+
 # Main app logic
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
+
 if not st.session_state['logged_in']:
     login()
 else:
     main_app()
     if st.button("Cerrar Sesión"):
         st.session_state['logged_in'] = False
+        st.session_state.pop('user', None)
         st.experimental_rerun()
+
+# Inicializar usuarios si el archivo no existe
+if not os.path.exists(USUARIOS_FILE):
+    initial_users = {
+        "Andres.Lira": {
+            "password": "admin01",
+            "type": "administrador",
+            "nombre": "Andrés Lira",
+            "telefono": "1234567890"
+        },
+        "Nadia.Lira": {
+            "password": "admin01",
+            "type": "administrador",
+            "nombre": "Nadia Lira",
+            "telefono": "0987654321"
+        }
+    }
+    save_users(initial_users)

@@ -1,1 +1,13 @@
 
+"Andres.Lira": {
+    "password": "admin01",
+    "type": "administrador",
+    "nombre": "Andrés Lira",
+    "telefono": "1234567890"
+},
+"Nadia.Lira": {
+    "password": "admin01",
+    "type": "administrador",
+    "nombre": "Nadia Lira",
+    "telefono": "0987654321"
+}

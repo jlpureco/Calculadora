@@ -33,11 +33,7 @@ def load_users():
     if os.path.exists(USUARIOS_FILE):
         try:
             with open(USUARIOS_FILE, 'r') as f:
-                content = f.read()
-                if content.strip():  # Verifica si el archivo no está vacío
-                    return json.loads(content)
-                else:
-                    return {}  # Retorna un diccionario vacío si el archivo está vacío
+                return json.load(f)
         except json.JSONDecodeError:
             st.error("Error al leer el archivo de usuarios. Inicializando con usuarios predeterminados.")
             return initialize_default_users()
@@ -93,8 +89,11 @@ def add_user(username, password, user_type, nombre, telefono):
             "telefono": telefono
         }
         save_users(users)
+        st.success(f"Usuario {username} agregado exitosamente")
         return True
-    return False
+    else:
+        st.error(f"El usuario {username} ya existe")
+        return False
 
 def login():
     st.title("Iniciar Sesión")
@@ -253,11 +252,7 @@ def add_new_user():
         
         if submitted:
             if add_user(new_username, new_password, user_type, nombre, telefono):
-                st.success("Usuario agregado exitosamente")
-                # Limpiar los campos después de agregar exitosamente
                 st.experimental_rerun()
-            else:
-                st.error("El nombre de usuario ya existe")
 
 # Main app logic
 if 'logged_in' not in st.session_state:
